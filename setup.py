@@ -22,5 +22,9 @@ setup(
     install_requires=[
         'elasticsearch-dsl',
         'elasticsearch-async'
+    ],
+    tests_require=[
+        'pytest',
+        'pytest-aiohttp'
     ]
 )
