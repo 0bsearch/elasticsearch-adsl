@@ -1,25 +1,35 @@
 from elasticsearch import JSONSerializer
 from elasticsearch_async import AsyncElasticsearch
-from elasticsearch_dsl.connections import connections
+from elasticsearch_dsl import connections
 from elasticsearch_dsl.serializer import AttrJSONSerializer
-from pytest import raises, fixture
+from pytest import fixture, raises
 
-from elasticsearch_adsl.connections import create_connection, get_connection
+from elasticsearch_adsl.connections import (
+    add_connection,
+    configure,
+    create_connection,
+    get_connection,
+    remove_connection,
+    sync
+)
 
 
-@fixture
-def clean_connections():
-    connections._kwargs.clear()
-    connections._conns.clear()
+@fixture(autouse=True)
+async def clean_connections(loop):
+    yield
+    for conn in connections.connections._conns.values():
+        await conn.transport.close()
+    connections.connections._kwargs.clear()
+    connections.connections._conns.clear()
 
 
-async def test_create_connection_base(clean_connections):
+async def test_create_connection_base():
     conn = create_connection()
     assert isinstance(conn, AsyncElasticsearch)
     assert conn is get_connection()
 
 
-async def test_create_connection_serializer(clean_connections):
+async def test_create_connection_serializer():
     conn = create_connection()
     assert isinstance(conn.transport.serializer, AttrJSONSerializer)
 
@@ -27,13 +37,34 @@ async def test_create_connection_serializer(clean_connections):
     assert isinstance(conn.transport.serializer, JSONSerializer)
 
 
-async def test_get_connection(clean_connections):
+async def test_get_connection():
     conn = create_connection()
     assert conn is get_connection()
     assert conn is get_connection('async')
-    assert  conn is connections.get_connection('async')
+    assert conn is connections.get_connection('async')
 
     with raises(KeyError):
         get_connection('default')
         connections.get_connection()
 
+
+async def test_get_with_configure():
+    configure(dev={'host': 'localhost'})
+    conn = get_connection('dev')
+    assert isinstance(conn, AsyncElasticsearch)
+
+
+def test_docstrings():
+    assert create_connection.__doc__
+    assert get_connection.__doc__
+    assert add_connection.__doc__
+    assert remove_connection.__doc__
+
+
+def test_sync_proxy():
+    assert sync.create_connection is connections.create_connection
+    assert sync.configure is connections.configure
+    assert sync.add_connection is connections.add_connection
+    assert sync.remove_connection is connections.remove_connection
+    assert sync.create_connection is connections.create_connection
+    assert sync.get_connection is connections.get_connection
