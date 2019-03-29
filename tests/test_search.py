@@ -3,6 +3,7 @@ from pytest import fixture
 
 from elasticsearch_adsl.connections import create_connection
 from elasticsearch_adsl.search import Search
+from elasticsearch_dsl.query import MatchAll
 
 
 @fixture
@@ -82,3 +83,13 @@ async def test_execute_cache(aes, index_name, mocker):
     result3 = await search.execute(ignore_cache=True)
     assert result3.hits == result1.hits
     assert aes.search.call_count == 2
+
+
+async def test_delete(index_name):
+    assert await Search(index=index_name).count() == 3
+
+    await Search(index=index_name).query('term', value=1).params(refresh=True).delete()
+    assert await Search(index=index_name).count() == 2
+
+    await Search(index=index_name).query(MatchAll()).params(refresh=True).delete()
+    assert await Search(index=index_name).count() == 0

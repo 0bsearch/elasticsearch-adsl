@@ -1,4 +1,4 @@
-from elasticsearch_dsl import search as sync_search
+from elasticsearch_dsl import search as sync_search, AttrDict
 
 from elasticsearch_adsl.connections import get_connection
 
@@ -47,3 +47,16 @@ class Search(Request, sync_search.Search):
             self._response = self._response_class(self, response)
 
         return self._response
+
+    async def delete(self):
+        """delete() executes the query by delegating to delete_by_query()"""
+        aes = get_connection(self._using)
+
+        response = await aes.delete_by_query(
+            index=self._index,
+            body=self.to_dict(),
+            doc_type=self._get_doc_type(),
+            **self._params,
+        )
+
+        return AttrDict(response)
