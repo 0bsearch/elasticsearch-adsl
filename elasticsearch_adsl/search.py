@@ -60,3 +60,24 @@ class Search(Request, sync_search.Search):
         )
 
         return AttrDict(response)
+
+    def scan(self):
+        """
+        Turn the search into a scan search and return a generator that will
+        iterate over all the documents matching the query.
+
+        Use ``params`` method to specify any additional arguments you with to
+        pass to the underlying ``scan`` helper from ``elasticsearch-py`` -
+        https://elasticsearch-py.readthedocs.io/en/master/helpers.html#elasticsearch.helpers.scan
+
+        """
+        aes = get_connection(self._using)
+
+        for hit in scan(
+                aes,
+                query=self.to_dict(),
+                index=self._index,
+                doc_type=self._get_doc_type(),
+                **self._params
+        ):
+            yield self._get_result(hit)
