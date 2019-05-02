@@ -1,3 +1,10 @@
+from asyncio import Future
+from unittest.mock import MagicMock
+
+from elasticsearch.helpers import ScanError
+from elasticsearch_async import AsyncElasticsearch
+from pytest import raises
+
 from elasticsearch_adsl.scan import scan
 
 
@@ -6,7 +13,7 @@ async def test_scan_basic(aes, test_data, index_name):
     assert len(results) == 3
 
 
-async def test_preserve_order(aes, index_name, ):
+async def test_preserve_order(aes, index_name):
     await aes.bulk(
         body=[
             {'index': {}}, {'value': 3},
@@ -33,12 +40,40 @@ async def test_scroll_error(aes, index_name, ):
     pass
 
 
-async def test_initial_search_error(aes, index_name, ):
-    pass
+async def test_initial_search_error():
+    aes = MagicMock(spec=AsyncElasticsearch)
+    _response = Future()
+    _response.set_result({'_shards': {}})
+    aes.search.return_value = _response
+
+    data = [h async for h in scan(aes)]
+    assert data == []
+    assert aes.scroll.call_count == 0
+    assert aes.clear_scroll.call_count == 0
 
 
-async def test_fast_error_route(aes, index_name, ):
-    pass
+# TODO: check asynctest.CoroutineMock for easier mocks
+async def test_fast_error_route():
+    aes = MagicMock(spec=AsyncElasticsearch)
+    _search_response = Future()
+    _search_response.set_result({
+        '_shards': {'total': 5, 'successful': 4},
+        '_scroll_id': 42,
+        'hits': {'hits': [1, 2, 3]},
+    })
+    aes.search.return_value = _search_response
+    _clean_response = Future()
+    _clean_response.set_result(None)
+    aes.clear_scroll.return_value = _clean_response
+
+    with raises(ScanError):
+        data = []
+        async for h in scan(aes):
+            data.append(h)
+
+    assert data == []
+    assert aes.scroll.call_count == 0
+    assert aes.clear_scroll.call_count == 1
 
 
 async def test_logger(aes, index_name, ):
