@@ -66,3 +66,11 @@ async def test_delete(index_name):
 
     await Search(index=index_name).query(MatchAll()).params(refresh=True).delete()
     assert await Search(index=index_name).count() == 0
+
+
+async def test_scan(index_name):
+    result = [h async for h in Search(index=index_name).scan()]
+    assert len(result) == 3
+    assert isinstance(result[0], Hit)
+    assert {h.value for h in result} == {1, 2, 3}
+
