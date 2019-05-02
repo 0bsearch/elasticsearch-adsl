@@ -1,3 +1,4 @@
+from asyncio import Future
 from unittest.mock import MagicMock
 
 from elasticsearch.helpers import ScanError
@@ -36,7 +37,40 @@ async def test_preserve_order(aes, index_name):
 
 
 async def test_scroll_error(aes, index_name, ):
-    pass
+    aes = MagicMock(spec=AsyncElasticsearch)
+
+    _search_response = Future()
+    _search_response.set_result({
+        '_shards': {'total': 5, 'successful': 5},
+        '_scroll_id': 42,
+        'hits': {'hits': [1, 2, 3]},
+    })
+    aes.search.return_value = _search_response
+
+    def _scroll_response(hits):
+        response = Future()
+        response.set_result({
+            '_shards': {'total': 5, 'successful': 4},
+            '_scroll_id': 42,
+            'hits': {'hits': hits},
+        })
+        return response
+    aes.scroll.side_effect = [_scroll_response([4, 5, 6]), _scroll_response([])]
+
+    data = [h async for h in scan(aes, raise_on_error=False, clear_scroll=False)]
+    assert data == [1, 2, 3, 4, 5, 6]
+    assert aes.scroll.call_count == 2
+
+    aes.search.reset_mock()
+    aes.scroll.reset_mock()
+    aes.scroll.side_effect = [_scroll_response([4, 5, 6]), _scroll_response([])]
+    with raises(ScanError):
+        data = []
+        async for h in scan(aes, raise_on_error=True, clear_scroll=False):
+            data.append(h)
+
+    assert data == [1, 2, 3]
+    assert aes.scroll.call_count == 1
 
 
 async def test_initial_search_error():
@@ -55,13 +89,13 @@ async def test_initial_search_error():
 async def test_fast_error_route():
     aes = MagicMock(spec=AsyncElasticsearch)
 
-    async def _search_response():
+    async def _failed_response():
         return {
             '_shards': {'total': 5, 'successful': 4},
             '_scroll_id': 42,
             'hits': {'hits': [1, 2, 3]},
         }
-    aes.search.return_value = _search_response()
+    aes.search.return_value = _failed_response()
 
     async def _clean_response():
         return

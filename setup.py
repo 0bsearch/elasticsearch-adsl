@@ -27,6 +27,7 @@ setup(
     tests_require=[
         'pytest',
         'pytest-aiohttp',
+        'pytest-cov',
         'pytest-mock',
     ]
 )

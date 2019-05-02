@@ -6,7 +6,6 @@ from elasticsearch.helpers import ScanError
 logger = logging.getLogger(__name__)
 
 
-# TODO: add test coverage
 # TODO: add docstring
 async def scan(
         client,
