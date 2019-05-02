@@ -6,7 +6,6 @@ from elasticsearch.helpers import ScanError
 logger = logging.getLogger(__name__)
 
 
-# TODO: add docstring
 async def scan(
         client,
         query=None,
@@ -19,6 +18,25 @@ async def scan(
         scroll_kwargs=None,
         **kwargs
 ):
+    """
+    Simple helper on top of search+scroll machinery, for easier data retrieval,
+    acts as async generator.
+
+    Args:
+        client (AsyncElasticsearch): elasticsearch client to use
+        query (dict): query for initial search query
+        scroll (str): specify how long ES should keep search context alive. Default is '5m'
+        raise_on_error (bool): if to raise `ScanError` when some ES shards fail.
+            Defaults to `True`
+        preserve_order (bool): if to preserve query ordering. ES has optimization for faster
+            scrolling, when sorting by `_doc`. Defaults to `False`, to give better performance
+        size (int): document batch size for every request. Higher value leads to heavier
+            memory usage, but less network round-trips. Defaults to `1000`
+        request_timeout (Real): request timeout, in seconds
+        clear_scroll (bool): if to clear scroll context in ES. Defaults to `True`
+        scroll_kwargs (dict): extra keyword parameters to pass for every `scroll` query
+        **kwargs: all additional arguments to pass into initial `search` call
+    """
     scroll_kwargs = scroll_kwargs or {}
 
     if not preserve_order:
