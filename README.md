@@ -1,3 +1,3 @@
 # elasticsearch-adsl
 
-Async interface for elasticsearch-dsl
+Async interface for elasticsearch-dsl, WIP

@@ -1,6 +1,7 @@
 from elasticsearch_dsl import search as sync_search, AttrDict
 
 from elasticsearch_adsl.connections import get_connection
+from elasticsearch_adsl.scan import scan
 
 
 class Request(sync_search.Request):
@@ -60,3 +61,22 @@ class Search(Request, sync_search.Search):
         )
 
         return AttrDict(response)
+
+    async def scan(self):
+        """
+        Turn the search into a scan search and return a async generator that will
+        iterate over all the documents matching the query.
+
+        Use ``params`` method to specify any additional arguments you with to pass to the
+        underlying ``scan`` helper
+        """
+        aes = get_connection(self._using)
+
+        async for hit in scan(
+                aes,
+                query=self.to_dict(),
+                index=self._index,
+                doc_type=self._get_doc_type(),
+                **self._params
+        ):
+            yield self._get_result(hit)
