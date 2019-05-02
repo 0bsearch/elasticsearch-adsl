@@ -1,4 +1,3 @@
-from asyncio import Future
 from unittest.mock import MagicMock
 
 from elasticsearch.helpers import ScanError
@@ -42,9 +41,10 @@ async def test_scroll_error(aes, index_name, ):
 
 async def test_initial_search_error():
     aes = MagicMock(spec=AsyncElasticsearch)
-    _response = Future()
-    _response.set_result({'_shards': {}})
-    aes.search.return_value = _response
+
+    async def _response():
+        return {}
+    aes.search.return_value = _response()
 
     data = [h async for h in scan(aes)]
     assert data == []
@@ -52,19 +52,20 @@ async def test_initial_search_error():
     assert aes.clear_scroll.call_count == 0
 
 
-# TODO: check asynctest.CoroutineMock for easier mocks
 async def test_fast_error_route():
     aes = MagicMock(spec=AsyncElasticsearch)
-    _search_response = Future()
-    _search_response.set_result({
-        '_shards': {'total': 5, 'successful': 4},
-        '_scroll_id': 42,
-        'hits': {'hits': [1, 2, 3]},
-    })
-    aes.search.return_value = _search_response
-    _clean_response = Future()
-    _clean_response.set_result(None)
-    aes.clear_scroll.return_value = _clean_response
+
+    async def _search_response():
+        return {
+            '_shards': {'total': 5, 'successful': 4},
+            '_scroll_id': 42,
+            'hits': {'hits': [1, 2, 3]},
+        }
+    aes.search.return_value = _search_response()
+
+    async def _clean_response():
+        return
+    aes.clear_scroll.return_value = _clean_response()
 
     with raises(ScanError):
         data = []
@@ -76,8 +77,23 @@ async def test_fast_error_route():
     assert aes.clear_scroll.call_count == 1
 
 
-async def test_logger(aes, index_name, ):
-    pass
+async def test_logger(mocker):
+    logger = mocker.patch('elasticsearch_adsl.scan.logger')
+
+    aes = MagicMock(spec=AsyncElasticsearch)
+
+    async def _failed_response():
+        return {
+            '_shards': {'total': 5, 'successful': 4},
+            '_scroll_id': 42,
+            'hits': {'hits': [1, 2, 3]},
+        }
+    aes.search.return_value = _failed_response()
+
+    with raises(ScanError):
+        async for _ in scan(aes, clear_scroll=False):
+            pass
+    assert logger.warning.call_count == 1
 
 
 async def test_clear_scroll(aes, index_name, test_data, mocker):
