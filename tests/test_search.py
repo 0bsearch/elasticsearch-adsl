@@ -1,5 +1,5 @@
 from elasticsearch_dsl.response import Hit, Response
-from pytest import fixture
+from pytest import fixture, raises
 
 from elasticsearch_adsl.search import Search
 from elasticsearch_dsl.query import MatchAll
@@ -74,3 +74,19 @@ async def test_scan(index_name):
     assert isinstance(result[0], Hit)
     assert {h.value for h in result} == {1, 2, 3}
 
+
+async def test_aiter(index_name):
+    result = [d async for d in Search(index=index_name)[:1]]
+    assert len(result) == 1
+    assert isinstance(result[0], Hit)
+
+    result = [d async for d in Search(index=index_name)]
+    assert len(result) == 3
+    assert isinstance(result[0], Hit)
+    assert {h.value for h in result} == {1, 2, 3}
+
+
+def test_iter(index_name):
+    with raises(TypeError) as e:
+        iter(Search(index=index_name))
+    assert 'use asynchronous iteration instead' in str(e.value)

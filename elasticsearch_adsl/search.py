@@ -10,8 +10,12 @@ class Request(sync_search.Request):
 
 
 class Search(Request, sync_search.Search):
-    def __iter__(self):  # TODO: raise exception, implement aiter
-        pass
+    def __iter__(self):
+        raise TypeError('Search is not iterable, use asynchronous iteration instead')
+
+    async def __aiter__(self):
+        for hit in await self.execute():
+            yield hit
 
     async def count(self):
         """
