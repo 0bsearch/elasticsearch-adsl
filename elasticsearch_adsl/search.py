@@ -22,14 +22,13 @@ class Search(Request, sync_search.Search):
         Return the number of hits matching the query and filters. Note that
         only the actual number is returned.
         """
-        if hasattr(self, '_response'):
-            return self._response.hits.total
+        if hasattr(self, '_response') and self._response.hits.total.relation == 'eq':
+            return self._response.hits.total.value
 
         aes = get_connection(self._using)
         d = self.to_dict(count=True)
         response = await aes.count(
             index=self._index,
-            doc_type=self._get_doc_type(),
             body=d,
             **self._params
         )
@@ -45,7 +44,6 @@ class Search(Request, sync_search.Search):
 
             response = await aes.search(
                 index=self._index,
-                doc_type=self._get_doc_type(),
                 body=self.to_dict(),
                 **self._params,
             )
@@ -60,7 +58,6 @@ class Search(Request, sync_search.Search):
         response = await aes.delete_by_query(
             index=self._index,
             body=self.to_dict(),
-            doc_type=self._get_doc_type(),
             **self._params,
         )
 
@@ -80,7 +77,6 @@ class Search(Request, sync_search.Search):
                 aes,
                 query=self.to_dict(),
                 index=self._index,
-                doc_type=self._get_doc_type(),
                 **self._params
         ):
             yield self._get_result(hit)

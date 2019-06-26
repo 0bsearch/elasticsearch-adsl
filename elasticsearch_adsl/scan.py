@@ -66,9 +66,8 @@ async def scan(
                 yield hit
 
             resp = await client.scroll(
-                scroll_id,
+                scroll_id=scroll_id,
                 scroll=scroll,
-                request_timeout=request_timeout,
                 **scroll_kwargs
             )
             scroll_id = resp.get('_scroll_id')

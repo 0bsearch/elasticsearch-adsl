@@ -23,7 +23,6 @@ async def test_preserve_order(aes, index_name):
             {'index': {}}, {'value': 4},
         ],
         index=index_name,
-        doc_type='doc',
         refresh=True
     )
 
