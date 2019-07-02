@@ -2,7 +2,7 @@ from elasticsearch import JSONSerializer
 from elasticsearch_async import AsyncElasticsearch
 from elasticsearch_dsl import connections
 from elasticsearch_dsl.serializer import AttrJSONSerializer
-from pytest import fixture, raises
+from pytest import raises, fixture
 
 from elasticsearch_adsl.connections import (
     add_connection,
@@ -15,12 +15,8 @@ from elasticsearch_adsl.connections import (
 
 
 @fixture(autouse=True)
-async def clean_connections(loop):
-    yield
-    for conn in connections.connections._conns.values():
-        await conn.transport.close()
-    connections.connections._kwargs.clear()
-    connections.connections._conns.clear()
+async def _clean_connections(clean_connections):
+    return
 
 
 async def test_create_connection_base():

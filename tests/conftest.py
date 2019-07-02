@@ -1,4 +1,5 @@
 from _pytest.fixtures import fixture
+from elasticsearch_dsl import connections
 
 from elasticsearch_adsl.connections import create_connection
 
@@ -12,11 +13,7 @@ def index_name():
 async def aes(index_name, loop):
     aes = create_connection()
     yield aes
-    await aes.delete_by_query(
-        index=index_name,
-        body={'query': {'match_all': {}}},
-        refresh=True
-    )
+    await aes.indices.delete(index_name, ignore=404)
     await aes.transport.close()
 
 
@@ -32,3 +29,12 @@ async def test_data(aes, index_name):
         doc_type='doc',
         refresh=True
     )
+
+
+@fixture
+async def clean_connections(loop):
+    yield
+    for conn in connections.connections._conns.values():
+        await conn.transport.close()
+    connections.connections._kwargs.clear()
+    connections.connections._conns.clear()
