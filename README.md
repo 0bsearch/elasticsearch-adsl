@@ -10,6 +10,7 @@ Near future improvements:
  - travis builds
  - basic docs
   - connections conventions
+  - 3.5 support when upstream will have scan
  - PyPI build
  - extensive docs
   - patterns for testing

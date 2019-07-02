@@ -9,11 +9,7 @@ from .search import Search
 # from .utils import merge
 # from . import analysis
 
-# TODO: remove from upstream
-DEFAULT_DOC_TYPE = 'doc'
 
-
-# TODO: add tests; unify interface with sync
 class IndexTemplate(sync_index.IndexTemplate):
     async def save(self, using=None):
         aes = get_connection(using or self._index._using)
@@ -133,7 +129,7 @@ class Index(sync_index.Index):
             index=self._name,
         )
 
-    # TODO: add `return` to upstream
+    # TODO: remove once https://github.com/elastic/elasticsearch-dsl-py/pull/1217 is merged
     def create(self, using=None, **kwargs):
         return self._get_connection(using).indices.create(
             index=self._name, body=self.to_dict(), **kwargs
