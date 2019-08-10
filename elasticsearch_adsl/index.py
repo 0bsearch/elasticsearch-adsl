@@ -129,7 +129,7 @@ class Index(sync_index.Index):
             index=self._name,
         )
 
-    # TODO: remove once https://github.com/elastic/elasticsearch-dsl-py/pull/1217 is merged
+    # TODO: remove with elasticsearch-dsl >7.0.0
     def create(self, using=None, **kwargs):
         return self._get_connection(using).indices.create(
             index=self._name, body=self.to_dict(), **kwargs

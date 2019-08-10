@@ -6,7 +6,7 @@ with open('README.md') as readme:
 
 setup(
     name='elasticsearch-adsl',
-    version="6.3.1.dev1",
+    version="7.0.0.dev1",
     author='Slam',
     author_email='3lnc.slam@gmail.com',
     description='Async interface for elasticsearch dsl',
