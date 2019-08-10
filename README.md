@@ -3,16 +3,16 @@
 Async interface for elasticsearch-dsl, WIP
 
 Near future improvements:
- - async `Mapping`
  - async `Index`
  - async `Document`
+ - fix for elasticsearch-async transport upstream (ssl & timeout deprecation)
  - `.sync` proxies for everything
  - travis builds
  - basic docs
-  - connections conventions
-  - 3.5 support when upstream will have scan
+   - connections conventions
+   - 3.5 support when upstream will have scan
  - PyPI build
  - extensive docs
-  - patterns for testing
+   - patterns for testing
  - rtfd
  - test client

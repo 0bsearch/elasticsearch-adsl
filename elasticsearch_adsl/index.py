@@ -5,7 +5,7 @@ from .connections import get_connection
 from .search import Search
 # from .update_by_query import UpdateByQuery
 # from .exceptions import IllegalOperation
-# from .mapping import Mapping
+from .mapping import Mapping
 # from .utils import merge
 # from . import analysis
 
@@ -140,7 +140,7 @@ class Index(sync_index.Index):
         return state['metadata']['indices'][self._name]['state'] == 'close'
 
     # TODO: async
-    def save(self, using=None):
+    async def save(self, using=None):
         """
         Sync the index definition with elasticsearch, creating the index if it
         doesn't exist and updating its settings and mappings if it does.
@@ -149,8 +149,8 @@ class Index(sync_index.Index):
         index (or at all on an existing index) and for those this method will
         fail with the underlying exception.
         """
-        if not self.exists(using=using):
-            return self.create(using=using)
+        if not await self.exists(using=using):
+            return await self.create(using=using)
 
         body = self.to_dict()
         settings = body.pop('settings', {})
